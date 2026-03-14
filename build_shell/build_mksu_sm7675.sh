@@ -52,13 +52,13 @@ cd "$KERNEL_WORKSPACE" || exit 1
 # setup.sh 默认就会拉取并切换到最新的 Release Tag
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 cd KernelSU || exit 1
-# 安全处理 devpts hook 的回退操作
-DEVPTS_COMMIT=$(git log --grep="remove devpts hook" --pretty=format:"%H")
-if [ -n "$DEVPTS_COMMIT" ]; then
-    echo "找到 devpts hook 提交，正在回退..."
-    git revert -m 1 "$DEVPTS_COMMIT" -n
+# Make the grep case-insensitive (-i) just in case
+COMMIT_HASH=$(git log --grep="remove devpts hook" -i --pretty=format:"%H")
+if [ -n "$COMMIT_HASH" ]; then
+    echo "Found commit $COMMIT_HASH. Reverting..."
+    git revert -m 1 "$COMMIT_HASH" -n
 else
-    echo "最新 Tag 中未找到 'remove devpts hook'，已跳过回退操作。"
+    echo "Commit 'remove devpts hook' not found in this branch/tag. Skipping revert."
 fi
 # 计算版本号并写入 Makefile
 KSU_VERSION=$(expr "$(git rev-list --count HEAD)" + 10200)
