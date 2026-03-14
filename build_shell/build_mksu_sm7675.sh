@@ -49,18 +49,9 @@ find . -type d > "$OLD_DIR/kernel_directory_structure.txt"
 
 # 设置 KernelSU
 cd "$KERNEL_WORKSPACE" || exit 1
-# setup.sh 默认就会拉取并切换到最新的 Release Tag
 curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 cd KernelSU || exit 1
-# Make the grep case-insensitive (-i) just in case
-COMMIT_HASH=$(git log --grep="remove devpts hook" -i --pretty=format:"%H")
-if [ -n "$COMMIT_HASH" ]; then
-    echo "Found commit $COMMIT_HASH. Reverting..."
-    git revert -m 1 "$COMMIT_HASH" -n
-else
-    echo "Commit 'remove devpts hook' not found in this branch/tag. Skipping revert."
-fi
-# 计算版本号并写入 Makefile
+# git revert -m 1 "$(git log --grep="remove devpts hook" --pretty=format:"%H")" -n
 KSU_VERSION=$(expr "$(git rev-list --count HEAD)" + 10200)
 sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
