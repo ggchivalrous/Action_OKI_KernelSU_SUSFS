@@ -72,12 +72,15 @@ jobs:
         working-directory: kernel_workspace
         id: build
         run: | 
-         curl -Ls https://raw.githubusercontent.com/mcxiaochenn/Action_OKI_KernelSU_SUSFS/refs/heads/main/build_shell/build_mksu_sm7675.sh -o build_mksu_sm7675.sh
-         chmod +x build_mksu_sm7675.sh
-         ./build_mksu_sm7675.sh ${{ steps.map_manifest.outputs.mapped_manifest }} \
-                                ${{ github.event.inputs.enable_lto }} \
-                                ${{ github.event.inputs.enable_polly }} \
-                                ${{ github.event.inputs.enable_o3 }} 
+         # 使用 $GITHUB_WORKSPACE 指向你仓库根目录下的脚本文件
+         SCRIPT_PATH="$GITHUB_WORKSPACE/build_shell/build_mksu_sm7675.sh"
+         # 赋予执行权限
+         chmod +x "$SCRIPT_PATH"
+         # 执行脚本
+         "$SCRIPT_PATH" ${{ steps.map_manifest.outputs.mapped_manifest }} \
+                        ${{ github.event.inputs.enable_lto }} \
+                        ${{ github.event.inputs.enable_polly }} \
+                        ${{ github.event.inputs.enable_o3 }} 
 
       - name: Make AnyKernel3
         run: |
