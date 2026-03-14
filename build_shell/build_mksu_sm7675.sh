@@ -53,13 +53,6 @@ cd KernelSU || exit 1
 KSU_VERSION=$(expr "$(git rev-list --count HEAD)" + 10200)
 sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
-# 应用常规修复补丁 (LZ4, ZSTD 与 WiFi 5G 修复)
-cd ../common || exit 1
-curl -o 001-lz4.patch https://raw.githubusercontent.com/ferstar/kernel_manifest/realme/sm8650/patches/001-lz4.patch
-patch -p1 < 001-lz4.patch || true
-curl -o 002-zstd.patch https://raw.githubusercontent.com/ferstar/kernel_manifest/realme/sm8650/patches/002-zstd.patch
-patch -p1 < 002-zstd.patch || true
-
 cd "$KERNEL_WORKSPACE" || exit 1
 
 # 这一步用于修复lz4与zstd 所导致的WiFi 5G失效等一系列问题
