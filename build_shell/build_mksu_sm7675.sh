@@ -48,7 +48,7 @@ find . -type d > "$OLD_DIR/kernel_directory_structure.txt"
 
 # 设置 KernelSU (官方原版)
 cd "$KERNEL_WORKSPACE" || exit 1
-curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v3.1.0
 cd KernelSU || exit 1
 KSU_VERSION=$(expr "$(git rev-list --count HEAD)" + 10200)
 sed -i "s/DKSU_VERSION=16/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
@@ -61,10 +61,56 @@ rm common/android/abi_gki_protected_exports_*
 echo "CONFIG_TMPFS_XATTR=y" >> "$KERNEL_WORKSPACE/common/arch/arm64/configs/gki_defconfig"
 echo "CONFIG_TMPFS_POSIX_ACL=y" >> "$KERNEL_WORKSPACE/common/arch/arm64/configs/gki_defconfig"
 
+# 追加 Docker 必需的核心配置
+cat << 'EOF' >> "$KERNEL_WORKSPACE/common/arch/arm64/configs/gki_defconfig"
+# --- Docker: Namespaces & Cgroups ---
+CONFIG_NAMESPACES=y
+CONFIG_USER_NS=y
+CONFIG_PID_NS=y
+CONFIG_UTS_NS=y
+CONFIG_IPC_NS=y
+CONFIG_NET_NS=y
+CONFIG_CGROUP_DEVICE=y
+CONFIG_CGROUP_CPUACCT=y
+CONFIG_CGROUP_FREEZER=y
+CONFIG_CGROUP_SCHED=y
+CONFIG_CPUSETS=y
+CONFIG_MEMCG=y
+CONFIG_BLK_CGROUP=y
+CONFIG_CGROUP_BPF=y
+
+# --- Docker: Networking & Iptables ---
+CONFIG_BRIDGE=y
+CONFIG_BRIDGE_NETFILTER=y
+CONFIG_VETH=y
+CONFIG_DUMMY=y
+CONFIG_MACVLAN=y
+CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y
+CONFIG_NETFILTER_XT_MATCH_IPVS=y
+CONFIG_NETFILTER_XT_MARK=y
+CONFIG_NETFILTER_XT_NAT=y
+CONFIG_IP_NF_FILTER=y
+CONFIG_IP_NF_NAT=y
+CONFIG_IP_NF_TARGET_MASQUERADE=y
+CONFIG_IP_VS=y
+CONFIG_IP_VS_IPV4=y
+CONFIG_IP_VS_RR=y
+
+# --- Docker: Storage / File System ---
+CONFIG_OVERLAY_FS=y
+
+# --- Docker: IPC & Misc ---
+CONFIG_POSIX_MQUEUE=y
+CONFIG_SECCOMP=y
+CONFIG_KEYS=y
+EOF
+
+# 绕过 Android GKI 的 defconfig 严格检查
 sed -i 's/check_defconfig//' "$KERNEL_WORKSPACE/common/build.config.gki"
 
 export OPLUS_FEATURES="OPLUS_FEATURE_BSP_DRV_INJECT_TEST=1"
-# 构建内核
+
+# ================= 构建内核 =================
 cd "$OLD_DIR" || exit 1
 ./kernel_platform/build_with_bazel.py -t "${CPUD}" gki \
     --config=stamp \
